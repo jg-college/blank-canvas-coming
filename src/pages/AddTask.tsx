@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { DateTime } from "luxon";
 import { ArrowLeft, Upload } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -8,9 +9,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { format } from "date-fns";
-import { fromZonedTime } from "date-fns-tz";
 import { BottomNavigation } from "@/components/layout/BottomNavigation";
+import { getUserTimezone, localToUtcISO } from "@/utils/timezone";
 
 export default function AddTask() {
   const navigate = useNavigate();
@@ -21,7 +21,7 @@ export default function AddTask() {
   const [formData, setFormData] = useState({
     title: "",
     description: "",
-    startTime: format(new Date(), "yyyy-MM-dd'T'HH:mm"),
+    startTime: DateTime.now().toFormat("yyyy-MM-dd'T'HH:mm"),
   });
 
   useEffect(() => {
@@ -51,13 +51,11 @@ export default function AddTask() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      // Parse the datetime-local input (already in user's local timezone)
-      const [dateStr, timeStr] = formData.startTime.split("T");
+      // Convert local time to UTC for storage
+      const utcStartTime = localToUtcISO(formData.startTime, timezone);
       
-      // Create a date object representing this time in the user's local timezone
-      // and convert to UTC for storage
-      const localDateTime = new Date(formData.startTime);
-      const utcTime = fromZonedTime(localDateTime, timezone);
+      // Get the task date in user's timezone
+      const taskDate = DateTime.fromISO(formData.startTime, { zone: timezone }).toFormat('yyyy-MM-dd');
 
       let imagePath = null;
 
@@ -78,11 +76,11 @@ export default function AddTask() {
         user_id: user.id,
         title: formData.title,
         description: formData.description || null,
-        start_time: utcTime.toISOString(),
+        start_time: utcStartTime,
         timezone: timezone,
         image_path: imagePath,
-        task_date: dateStr,
-        original_date: dateStr,
+        task_date: taskDate,
+        original_date: taskDate,
         status: "pending",
         consecutive_missed_days: 0,
       });

@@ -203,7 +203,7 @@ export default function Tasks() {
           <div>
             <h1 className="text-2xl font-bold text-foreground mb-1">Daily Tasks</h1>
             <p className="text-sm text-muted-foreground">
-              {format(new Date(), "EEEE, MMM d")} • {tasks.length} task{tasks.length !== 1 ? "s" : ""}
+              {DateTime.now().setZone(userTimezone).toFormat("EEEE, MMM d")} • {tasks.length} task{tasks.length !== 1 ? "s" : ""}
             </p>
           </div>
           <Button

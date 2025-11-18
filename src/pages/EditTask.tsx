@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Upload, Trash2 } from "lucide-react";
+import { DateTime } from "luxon";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,9 +9,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { format } from "date-fns";
-import { toZonedTime, fromZonedTime } from "date-fns-tz";
 import { BottomNavigation } from "@/components/layout/BottomNavigation";
+import { getUserTimezone, localToUtcISO, utcToLocalISO } from "@/utils/timezone";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -68,22 +68,13 @@ export default function EditTask() {
 
       if (error) throw error;
 
-      // Extract time from stored timestamp without timezone conversion
-      // Just parse the ISO string and extract the time components directly
-      const startTimeISO = data.start_time; // e.g., "2024-01-15T19:00:00.000Z"
-      const datePart = data.task_date; // e.g., "2024-01-15"
-      
-      // Extract hours and minutes from the ISO string directly
-      const timeMatch = startTimeISO.match(/T(\d{2}:\d{2})/);
-      const timePart = timeMatch ? timeMatch[1] : "00:00";
-      
-      // Combine date and time for the datetime-local input
-      const formattedTime = `${datePart}T${timePart}`;
+      // Convert UTC time to local time for the datetime-local input
+      const localTimeString = utcToLocalISO(data.start_time, timezone);
 
       setFormData({
         title: data.title,
         description: data.description || "",
-        startTime: formattedTime,
+        startTime: localTimeString,
       });
       setExistingImagePath(data.image_path);
     } catch (error: any) {
@@ -104,13 +95,11 @@ export default function EditTask() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      // Parse the datetime-local input (already in user's local timezone)
-      const [dateStr, timeStr] = formData.startTime.split("T");
+      // Convert local time to UTC for storage
+      const utcStartTime = localToUtcISO(formData.startTime, timezone);
       
-      // Create a date object representing this time in the user's local timezone
-      // and convert to UTC for storage
-      const localDateTime = new Date(formData.startTime);
-      const utcTime = fromZonedTime(localDateTime, timezone);
+      // Get the task date in user's timezone
+      const taskDate = DateTime.fromISO(formData.startTime, { zone: timezone }).toFormat('yyyy-MM-dd');
 
       let imagePath = existingImagePath;
 
