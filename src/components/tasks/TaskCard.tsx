@@ -4,12 +4,12 @@ import { Clock, CheckCircle2, Image as ImageIcon, Sparkles } from "lucide-react"
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { format } from "date-fns";
-import { toZonedTime } from "date-fns-tz";
+import { DateTime } from "luxon";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { AIRecommendations } from "./AIRecommendations";
 import { calculateTaskDuration, formatDuration } from "@/utils/taskDuration";
+import { localToUtcISO, formatUtcForDisplay } from "@/utils/timezone";
 import {
   Dialog,
   DialogContent,
@@ -47,21 +47,23 @@ export function TaskCard({ task, statusInfo, funnyMessage, onRefresh, userTimezo
   const { toast } = useToast();
   const [showCompleteDialog, setShowCompleteDialog] = useState(false);
   const [completionTime, setCompletionTime] = useState(
-    format(new Date(), "yyyy-MM-dd'T'HH:mm")
+    DateTime.now().setZone(userTimezone).toFormat("yyyy-MM-dd'T'HH:mm")
   );
   const [uploadingImage, setUploadingImage] = useState(false);
   const [completionImage, setCompletionImage] = useState<File | null>(null);
 
-  // Convert UTC start time to user's timezone for display
-  const startTimeInUserTz = toZonedTime(new Date(task.start_time), userTimezone);
-  const displayStartTime = format(startTimeInUserTz, "h:mm a");
+  // Display start time in user's timezone
+  const displayStartTime = formatUtcForDisplay(task.start_time, userTimezone, 'time');
 
   const handleComplete = async () => {
     try {
+      // Convert completion time to UTC
+      const utcCompletionTime = localToUtcISO(completionTime, userTimezone);
+      
       // Calculate duration in user's local timezone
       const durationMinutes = calculateTaskDuration(
         task.start_time,
-        completionTime,
+        utcCompletionTime,
         userTimezone
       );
 
@@ -88,7 +90,7 @@ export function TaskCard({ task, statusInfo, funnyMessage, onRefresh, userTimezo
         .from("tasks")
         .update({
           status: "completed",
-          end_time: completionTime,
+          end_time: utcCompletionTime,
           total_time_minutes: durationMinutes,
           image_path: imagePath,
         })
@@ -193,7 +195,7 @@ export function TaskCard({ task, statusInfo, funnyMessage, onRefresh, userTimezo
                 type="datetime-local"
                 value={completionTime}
                 onChange={(e) => setCompletionTime(e.target.value)}
-                max={format(new Date(), "yyyy-MM-dd'T'HH:mm")}
+                max={DateTime.now().setZone(userTimezone).toFormat("yyyy-MM-dd'T'HH:mm")}
               />
             </div>
             <div>

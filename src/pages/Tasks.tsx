@@ -1,15 +1,16 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Plus, Calendar, Clock, Image as ImageIcon, ClipboardList } from "lucide-react";
+import { DateTime } from "luxon";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { format, isToday } from "date-fns";
 import { TaskCard } from "@/components/tasks/TaskCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BottomNavigation } from "@/components/layout/BottomNavigation";
+import { getUserTimezone, startOfTodayInZone } from "@/utils/timezone";
 
 interface Task {
   id: string;
@@ -62,30 +63,40 @@ export default function Tasks() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const today = new Date().toISOString().split("T")[0];
+      // Get today in user's timezone
+      const todayStart = startOfTodayInZone(userTimezone);
+      const today = todayStart.toFormat('yyyy-MM-dd');
       
       // Find all pending tasks with scheduledDate < today
       const { data: pendingTasks, error: fetchError } = await supabase
         .from("tasks")
-        .select("id, task_date, consecutive_missed_days")
+        .select("id, task_date, consecutive_missed_days, start_time")
         .eq("user_id", user.id)
         .eq("status", "pending")
         .lt("task_date", today);
 
       if (fetchError) throw fetchError;
 
-      // Update each task's scheduledDate to today
+      // Update each task's scheduledDate to today, keeping the same local time
       if (pendingTasks && pendingTasks.length > 0) {
         const updates = pendingTasks.map((task) => {
           const daysMissed = Math.floor(
-            (new Date(today).getTime() - new Date(task.task_date).getTime()) / 
-            (1000 * 60 * 60 * 24)
+            todayStart.diff(DateTime.fromISO(task.task_date, { zone: userTimezone }), 'days').days
           );
+          
+          // Parse the original start_time UTC, convert to user's timezone to get the time portion
+          const originalStartDt = DateTime.fromISO(task.start_time, { zone: 'UTC' }).setZone(userTimezone);
+          const timeOfDay = originalStartDt.toFormat('HH:mm:ss');
+          
+          // Build new start_time: today's date + original time of day in user's timezone, then convert to UTC
+          const newStartDt = DateTime.fromFormat(`${today} ${timeOfDay}`, 'yyyy-MM-dd HH:mm:ss', { zone: userTimezone });
+          const newStartTimeUtc = newStartDt.toUTC().toISO();
           
           return supabase
             .from("tasks")
             .update({
               task_date: today,
+              start_time: newStartTimeUtc,
               consecutive_missed_days: (task.consecutive_missed_days || 0) + daysMissed,
             })
             .eq("id", task.id);
@@ -103,7 +114,8 @@ export default function Tasks() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const today = new Date().toISOString().split("T")[0];
+      // Get today in user's timezone
+      const today = startOfTodayInZone(userTimezone).toFormat('yyyy-MM-dd');
       
       const { data, error } = await supabase
         .from("tasks")

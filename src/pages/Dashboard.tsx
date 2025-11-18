@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { DateTime } from "luxon";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,7 @@ import { ExpiryTimeline } from "@/components/dashboard/ExpiryTimeline";
 import { ChatBot } from "@/components/chatbot/ChatBot";
 import { useToast } from "@/hooks/use-toast";
 import { getDocumentStatus } from "@/utils/documentStatus";
+import { getUserTimezone, formatUtcForDisplay, startOfTodayInZone } from "@/utils/timezone";
 
 interface Document {
   id: string;
@@ -37,12 +39,26 @@ export default function Dashboard() {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [recentDocuments, setRecentDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
+  const [userTimezone, setUserTimezone] = useState("UTC");
 
   useEffect(() => {
     if (user) {
+      fetchUserTimezone();
       fetchDashboardData();
     }
   }, [user]);
+
+  const fetchUserTimezone = async () => {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("timezone")
+      .eq("user_id", user?.id)
+      .single();
+    
+    if (profile?.timezone) {
+      setUserTimezone(profile.timezone);
+    }
+  };
 
   const fetchDashboardData = async () => {
     try {
@@ -55,18 +71,21 @@ export default function Dashboard() {
 
       if (error) throw error;
 
-      const today = new Date();
-      const thirtyDaysFromNow = new Date();
-      thirtyDaysFromNow.setDate(today.getDate() + 30);
+      // Get today in user's timezone
+      const todayStart = startOfTodayInZone(userTimezone);
+      const thirtyDaysFromNow = todayStart.plus({ days: 30 });
 
       // Filter out DocVault documents from stats
       const nonDocVaultDocs = documents?.filter(doc => doc.issuing_authority !== 'DocVault') || [];
       
       const total = nonDocVaultDocs.length;
-      const expired = nonDocVaultDocs.filter(doc => new Date(doc.expiry_date) < today).length || 0;
+      const expired = nonDocVaultDocs.filter(doc => {
+        const expiryDt = DateTime.fromISO(doc.expiry_date, { zone: userTimezone });
+        return expiryDt < todayStart;
+      }).length || 0;
       const expiringSoon = nonDocVaultDocs.filter(doc => {
-        const expiryDate = new Date(doc.expiry_date);
-        return expiryDate >= today && expiryDate <= thirtyDaysFromNow;
+        const expiryDt = DateTime.fromISO(doc.expiry_date, { zone: userTimezone });
+        return expiryDt >= todayStart && expiryDt <= thirtyDaysFromNow;
       }).length || 0;
       const valid = total - expired - expiringSoon;
 
@@ -83,9 +102,9 @@ export default function Dashboard() {
   };
 
   const getStatusBadge = (expiryDate: string) => {
-    const today = new Date();
-    const expiry = new Date(expiryDate);
-    const daysUntilExpiry = Math.ceil((expiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    const todayStart = startOfTodayInZone(userTimezone);
+    const expiryDt = DateTime.fromISO(expiryDate, { zone: userTimezone });
+    const daysUntilExpiry = Math.ceil(expiryDt.diff(todayStart, 'days').days);
 
     if (daysUntilExpiry < 0) {
       return <Badge variant="destructive">Expired</Badge>;
