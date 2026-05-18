@@ -28,6 +28,14 @@ interface Document {
 }
 
 const categories = [
+  { id: "government_legal", name: "Government & Legal Renewals", Icon: Landmark, types: ["passport", "passport_renewal", "license", "drivers_license", "permit", "vehicle_registration", "health_card", "work_permit_visa", "permanent_residency", "business_license", "tax_filing", "ticket_fines", "voting_registration"] },
+  { id: "financial_utility", name: "Financial & Utility Renewals", Icon: Wallet, types: ["insurance", "credit_card", "insurance_policy", "utility_bills", "loan_payment", "subscription", "bank_card"] },
+  { id: "personal_productivity", name: "Personal Life & Productivity", Icon: HeartPulse, types: ["health_checkup", "medication_refill", "pet_vaccination", "fitness_membership", "library_book", "warranty", "home_maintenance"] },
+  { id: "work_education", name: "Work & Education", Icon: GraduationCap, types: ["certification", "professional_license", "training_certificate", "software_license", "student_visa", "course_registration"] },
+  { id: "family_shared", name: "Family & Shared Renewals", Icon: Users, types: ["children_documents", "school_enrollment", "family_insurance", "joint_subscription", "pet_care", "property_lease"] },
+  { id: "digital_security", name: "Digital & Security Renewals", Icon: ShieldCheck, types: ["domain_name", "web_hosting", "cloud_storage", "device_warranty", "password_security"] },
+  { id: "other", name: "Other", Icon: Folder, types: ["other"] },
+];
   { id: "government_legal", name: "Government & Legal Renewals", iconSrc: governmentIcon, color: "bg-blue-500/10 text-blue-500", types: ["passport", "passport_renewal", "license", "drivers_license", "permit", "vehicle_registration", "health_card", "work_permit_visa", "permanent_residency", "business_license", "tax_filing", "ticket_fines", "voting_registration"] },
   { id: "financial_utility", name: "Financial & Utility Renewals", iconSrc: financialIcon, color: "bg-green-500/10 text-green-500", types: ["insurance", "credit_card", "insurance_policy", "utility_bills", "loan_payment", "subscription", "bank_card"] },
   { id: "personal_productivity", name: "Personal Life & Productivity", iconSrc: personalIcon, color: "bg-pink-500/10 text-pink-500", types: ["health_checkup", "medication_refill", "pet_vaccination", "fitness_membership", "library_book", "warranty", "home_maintenance"] },
