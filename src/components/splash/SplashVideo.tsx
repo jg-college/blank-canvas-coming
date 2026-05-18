@@ -84,7 +84,7 @@ export function SplashVideo({ onComplete, maxDurationMs = 8000 }: SplashVideoPro
             disableRemotePlayback
             onEnded={finish}
             onError={finish}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-contain"
           />
         </motion.div>
       )}
