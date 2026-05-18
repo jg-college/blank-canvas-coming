@@ -54,3 +54,20 @@ if (typeof window !== 'undefined' && (window as any).cordova) {
 */
 
 createRoot(document.getElementById("root")!).render(<App />);
+
+// Hide Capacitor native splash once React has mounted the custom video splash.
+if (typeof window !== "undefined") {
+  requestAnimationFrame(() => {
+    import("@capacitor/core")
+      .then(({ Capacitor }) => {
+        if (Capacitor.isNativePlatform()) {
+          import("@capacitor/splash-screen")
+            .then(({ SplashScreen }) =>
+              SplashScreen.hide({ fadeOutDuration: 200 }).catch(() => {})
+            )
+            .catch(() => {});
+        }
+      })
+      .catch(() => {});
+  });
+}
