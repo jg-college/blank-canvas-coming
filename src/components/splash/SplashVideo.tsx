@@ -79,8 +79,7 @@ export function SplashVideo({ onComplete, maxDurationMs = 8000 }: SplashVideoPro
             autoPlay
             muted
             playsInline
-            // @ts-expect-error - non-standard but respected on iOS
-            webkit-playsinline="true"
+            {...({ "webkit-playsinline": "true" } as any)}
             preload="auto"
             disableRemotePlayback
             onEnded={finish}
