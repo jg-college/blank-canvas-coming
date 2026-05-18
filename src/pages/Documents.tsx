@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FileText, Plus, Search } from "lucide-react";
+import { FileText, Plus, Search, Landmark, Wallet, HeartPulse, GraduationCap, Users, ShieldCheck, Folder } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { BottomNavigation } from "@/components/layout/BottomNavigation";
 import { SafeAreaContainer } from "@/components/layout/SafeAreaContainer";
@@ -16,13 +16,6 @@ import { getDocumentStatus } from "@/utils/documentStatus";
 import { SwipeableDocumentCard } from "@/components/document/SwipeableDocumentCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getOfflineDocuments } from "@/utils/offlineStorage";
-import governmentIcon from "@/assets/category-icons/government-icon.png";
-import financialIcon from "@/assets/category-icons/financial-icon.png";
-import personalIcon from "@/assets/category-icons/personal-icon.png";
-import educationIcon from "@/assets/category-icons/education-icon.png";
-import familyIcon from "@/assets/category-icons/family-icon.png";
-import securityIcon from "@/assets/category-icons/security-icon.png";
-import otherIcon from "@/assets/category-icons/other-icon.png";
 
 interface Document {
   id: string;
