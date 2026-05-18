@@ -6,7 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
-import { lazy, Suspense, useEffect } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { Capacitor } from "@capacitor/core";
 import { speakWelcome } from "@/utils/voiceGreeting";
 
@@ -14,6 +14,7 @@ import AuthEventListener from "./components/auth/AuthEventListener";
 import { OfflineIndicator } from "./components/layout/OfflineIndicator";
 import { ThemeProvider } from "./components/theme/ThemeProvider";
 import { ThemePreferenceProvider } from "./components/theme/ThemePreferenceProvider";
+import SplashVideo from "./components/splash/SplashVideo";
 
 // ── Only eagerly load the landing page (Dashboard) ──
 import Dashboard from "./pages/Dashboard";
@@ -161,59 +162,72 @@ if (typeof window !== 'undefined') {
 }
 
 // ── MAIN APP ──
-const App = () => (
-  <ErrorBoundary>
-    <ThemeProvider>
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <ThemePreferenceProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
+const App = () => {
+  const [splashDone, setSplashDone] = useState(false);
 
-            <BrowserRouter>
-              <AuthEventListener />
-              <BackgroundInitializer />
-              <OfflineIndicator />
+  return (
+    <ErrorBoundary>
+      {!splashDone && <SplashVideo onComplete={() => setSplashDone(true)} />}
+      <div
+        style={{
+          visibility: splashDone ? "visible" : "hidden",
+          opacity: splashDone ? 1 : 0,
+          transition: "opacity 400ms ease-out",
+        }}
+      >
+        <ThemeProvider>
+          <QueryClientProvider client={queryClient}>
+            <AuthProvider>
+              <ThemePreferenceProvider>
+              <TooltipProvider>
+                <Toaster />
+                <Sonner />
 
-              {/* ChatBot loaded lazily after main content */}
-              <Suspense fallback={null}>
-                <ChatBot />
-              </Suspense>
+                <BrowserRouter>
+                  <AuthEventListener />
+                  {splashDone && <BackgroundInitializer />}
+                  <OfflineIndicator />
 
-              <Suspense fallback={<PageFallback />}>
-                <Routes>
-                  <Route path="/auth" element={<Auth />} />
-                  <Route path="/reset-password" element={<ResetPassword />} />
+                  {/* ChatBot loaded lazily after main content */}
+                  <Suspense fallback={null}>
+                    <ChatBot />
+                  </Suspense>
 
-                  <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-                  <Route path="/documents" element={<ProtectedRoute><Documents /></ProtectedRoute>} />
-                  <Route path="/documents/:id" element={<ProtectedRoute><DocumentDetail /></ProtectedRoute>} />
-                  <Route path="/documents/:id/edit" element={<ProtectedRoute><EditDocument /></ProtectedRoute>} />
-                  <Route path="/scan" element={<ProtectedRoute><Scan /></ProtectedRoute>} />
-                  <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
-                  <Route path="/notification-settings" element={<ProtectedRoute><NotificationSettings /></ProtectedRoute>} />
-                  <Route path="/notification-sound-settings" element={<ProtectedRoute><NotificationSoundSettings /></ProtectedRoute>} />
-                  <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-                  <Route path="/docvault" element={<ProtectedRoute><DocVault /></ProtectedRoute>} />
-                  <Route path="/tasks" element={<ProtectedRoute><Tasks /></ProtectedRoute>} />
-                  <Route path="/task-history" element={<ProtectedRoute><TaskHistory /></ProtectedRoute>} />
-                  <Route path="/add-task" element={<ProtectedRoute><AddTask /></ProtectedRoute>} />
-                  <Route path="/task/:id" element={<ProtectedRoute><TaskDetail /></ProtectedRoute>} />
-                  <Route path="/edit-task/:id" element={<ProtectedRoute><EditTask /></ProtectedRoute>} />
-                  <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-                  <Route path="/test-emails" element={<ProtectedRoute><TestEmails /></ProtectedRoute>} />
-                  <Route path="/test-onesignal" element={<ProtectedRoute><TestOneSignal /></ProtectedRoute>} />
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </Suspense>
-            </BrowserRouter>
-          </TooltipProvider>
-          </ThemePreferenceProvider>
-        </AuthProvider>
-      </QueryClientProvider>
-    </ThemeProvider>
-  </ErrorBoundary>
-);
+                  <Suspense fallback={<PageFallback />}>
+                    <Routes>
+                      <Route path="/auth" element={<Auth />} />
+                      <Route path="/reset-password" element={<ResetPassword />} />
+
+                      <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                      <Route path="/documents" element={<ProtectedRoute><Documents /></ProtectedRoute>} />
+                      <Route path="/documents/:id" element={<ProtectedRoute><DocumentDetail /></ProtectedRoute>} />
+                      <Route path="/documents/:id/edit" element={<ProtectedRoute><EditDocument /></ProtectedRoute>} />
+                      <Route path="/scan" element={<ProtectedRoute><Scan /></ProtectedRoute>} />
+                      <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
+                      <Route path="/notification-settings" element={<ProtectedRoute><NotificationSettings /></ProtectedRoute>} />
+                      <Route path="/notification-sound-settings" element={<ProtectedRoute><NotificationSoundSettings /></ProtectedRoute>} />
+                      <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+                      <Route path="/docvault" element={<ProtectedRoute><DocVault /></ProtectedRoute>} />
+                      <Route path="/tasks" element={<ProtectedRoute><Tasks /></ProtectedRoute>} />
+                      <Route path="/task-history" element={<ProtectedRoute><TaskHistory /></ProtectedRoute>} />
+                      <Route path="/add-task" element={<ProtectedRoute><AddTask /></ProtectedRoute>} />
+                      <Route path="/task/:id" element={<ProtectedRoute><TaskDetail /></ProtectedRoute>} />
+                      <Route path="/edit-task/:id" element={<ProtectedRoute><EditTask /></ProtectedRoute>} />
+                      <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+                      <Route path="/test-emails" element={<ProtectedRoute><TestEmails /></ProtectedRoute>} />
+                      <Route path="/test-onesignal" element={<ProtectedRoute><TestOneSignal /></ProtectedRoute>} />
+                      <Route path="*" element={<NotFound />} />
+                    </Routes>
+                  </Suspense>
+                </BrowserRouter>
+              </TooltipProvider>
+              </ThemePreferenceProvider>
+            </AuthProvider>
+          </QueryClientProvider>
+        </ThemeProvider>
+      </div>
+    </ErrorBoundary>
+  );
+};
 
 export default App;
